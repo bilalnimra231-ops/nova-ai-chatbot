@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nova AI Chat</title>
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --bg-soft: #eef2ff;
+        --panel: #ffffff;
+        --panel-2: #f3f4f6;
+        --sidebar: #f1f5f9;
+        --text: #111827;
+        --muted: #64748b;
+        --accent: #10a37f;
+        --accent-2: #2563eb;
+        --user: #dbeafe;
+        --assistant: #f3f4f6;
+        --border: rgba(15, 23, 42, 0.08);
+        --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: Inter, "Segoe UI", sans-serif;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+        color: var(--text);
+      }
+
+      body {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: 280px;
+        background: #f8fafc;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 16px 12px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 10px 18px;
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
+
+      .logo {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        display: grid;
+        place-items: center;
+        font-size: 0.8rem;
+      }
+
+      .new-chat {
+        border: 1px solid var(--border);
+        background: #ffffff;
+        color: var(--text);
+        border-radius: 12px;
+        padding: 12px 14px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        margin: 8px 8px 16px;
+      }
+
+      .history {
+        overflow-y: auto;
+        padding: 0 8px;
+      }
+
+      .history-item {
+        padding: 11px 12px;
+        border-radius: 10px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .history-item.active {
+        background: #e5e7eb;
+        color: var(--text);
+      }
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .topbar {
+        height: 64px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 22px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+      }
+
+      .chat-title {
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+      }
+
+      .chat-wrap {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 0 20px;
+      }
+
+      .messages {
+        max-width: 980px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 10px 20px 0;
+      }
+
+      .msg {
+        display: flex;
+        gap: 14px;
+        margin: 20px 0;
+      }
+
+      .avatar {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .msg.user .avatar {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+      }
+
+      .msg.assistant .avatar {
+        background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      }
+
+      .bubble {
+        padding: 14px 16px;
+        border-radius: 14px;
+        line-height: 1.6;
+        max-width: min(75%, 820px);
+        white-space: pre-wrap;
+      }
+
+      .msg.user .bubble {
+        background: #dbeafe;
+        border: 1px solid rgba(37, 99, 235, 0.12);
+      }
+
+      .msg.assistant .bubble {
+        background: #f3f4f6;
+        border: 1px solid var(--border);
+      }
+
+      .composer {
+        border-top: 1px solid var(--border);
+        padding: 18px 24px 22px;
+        background: rgba(255,255,255,0.7);
+      }
+
+      .composer-box {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 12px 14px 8px;
+      }
+
+      textarea {
+        width: 100%;
+        resize: none;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--text);
+        font-size: 1rem;
+        line-height: 1.6;
+        min-height: 60px;
+        max-height: 220px;
+        font-family: inherit;
+      }
+
+      .composer-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .loading-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 20px 0;
+      }
+
+      .loading-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3b82f6;
+        display: inline-block;
+        animation: pulse 1.2s infinite ease-in-out;
+      }
+
+      .loading-text {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .platform-overview {
+        margin: 18px 0 28px;
+        background: linear-gradient(135deg, rgba(16, 163, 127, 0.08), rgba(37, 99, 235, 0.08));
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 22px;
+        padding: 22px 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .platform-overview h2 {
+        margin: 0 0 14px;
+        font-size: 1.3rem;
+      }
+
+      .structure-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 14px;
+      }
+
+      .module-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 16px;
+        padding: 14px 14px 12px;
+      }
+
+      .module-tag {
+        display: inline-block;
+        background: #e0f2fe;
+        color: #075985;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 6px 8px;
+        margin-bottom: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .module-card h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      .module-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      @keyframes pulse {
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+        40% { transform: scale(1.1); opacity: 1; }
+      }
+
+      .auth-screen {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        padding: 24px;
+      }
+
+      .auth-card {
+        width: min(420px, 100%);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        padding: 36px 28px;
+        text-align: center;
+      }
+
+      .auth-logo {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 18px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        font-size: 1.6rem;
+      }
+
+      .auth-card h1 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+      }
+
+      .auth-card p {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .auth-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .auth-form {
+        display: none;
+        text-align: left;
+        margin-top: 18px;
+      }
+
+      .auth-form.active {
+        display: block;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .field label {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .field input {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 1rem;
+        background: #fff;
+        color: var(--text);
+      }
+
+      .field input:focus {
+        outline: 2px solid rgba(37, 99, 235, 0.2);
+        border-color: rgba(37, 99, 235, 0.3);
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .form-btn,
+      .link-btn {
+        appearance: none;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
+
+      .primary-btn,
+      .form-btn {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white;
+      }
+
+      .secondary-btn {
+        background: #eef2ff;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .link-btn {
+        background: transparent;
+        padding: 0;
+        color: var(--accent-2);
+        font-weight: 600;
+        margin-top: 10px;
+      }
+
+      .status {
+        min-height: 20px;
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #dc2626;
+      }
+
+      button.send {
+        appearance: none;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white;
+        font-weight: 700;
+        padding: 10px 18px;
+        cursor: pointer;
+      }
+
+      button.send:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 820px) {
+        body { flex-direction: column; }
+        .sidebar {
+          width: 100%;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+          min-height: auto;
+        }
+        .bubble { max-width: 90%; }
+      }
+    </style>
+  </head>
+  <body>
+      <div class="auth-screen" id="authScreen">
+        <div class="auth-card">
+          <div class="auth-logo">N</div>
+          <h1 id="authTitle">Welcome to Nova AI</h1>
+          <p id="authSubtitle">Sign in to continue</p>
+
+          <div class="auth-actions" id="authActions">
+            <button class="primary-btn" id="loginBtn">Login</button>
+            <button class="secondary-btn" id="signupBtn">Sign up</button>
+          </div>
+
+          <form class="auth-form" id="authForm">
+            <div class="field">
+              <label for="emailInput">Email</label>
+              <input id="emailInput" type="email" placeholder="you@example.com" required />
+            </div>
+
+            <div class="field" id="confirmField" style="display: none;">
+              <label for="confirmInput">Confirm Password</label>
+              <input id="confirmInput" type="password" placeholder="Confirm password" />
+            </div>
+
+            <div class="field">
+              <label for="passwordInput">Password</label>
+              <input id="passwordInput" type="password" placeholder="Enter your password" required />
+            </div>
+
+            <button type="submit" class="form-btn" id="submitAuthBtn">Login</button>
+            <div style="text-align: center;">
+              <button type="button" class="link-btn" id="switchAuthBtn">Create account</button>
+            </div>
+            <div class="status" id="authStatus"></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="app-shell" id="appShell" style="display: none;">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="logo">N</div>
+            <span>Nova AI</span>
+          </div>
+          <button class="new-chat" id="newChat">+ New chat</button>
+          <div class="history" id="history"></div>
+        </aside>
+
+        <main class="main">
+          <div class="topbar">
+            <div class="chat-title" id="chatTitle">New conversation</div>
+            <div class="actions">
+              <span>● Online</span>
+            </div>
+          </div>
+
+          <div class="chat-wrap">
+            <div class="messages" id="messages"></div>
+          </div>
+
+          <div class="composer">
+            <div class="composer-box">
+              <textarea id="prompt" placeholder="Ask anything..." rows="1"></textarea>
+              <div class="composer-row">
+                <div class="hint">Press Enter to send</div>
+                <button class="send" id="sendBtn">Send</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+    <script>
+      const state = {
+        chats: [],
+        activeChatId: null,
+        draft: '',
+        isAuthenticated: false,
+        authMode: 'login'
+      };
+
+      const authScreen = document.getElementById('authScreen');
+      const appShell = document.getElementById('appShell');
+      const historyEl = document.getElementById('history');
+      const messagesEl = document.getElementById('messages');
+      const promptEl = document.getElementById('prompt');
+      const sendBtn = document.getElementById('sendBtn');
+      const chatTitle = document.getElementById('chatTitle');
+      const authForm = document.getElementById('authForm');
+      const authActions = document.getElementById('authActions');
+      const authTitle = document.getElementById('authTitle');
+      const authSubtitle = document.getElementById('authSubtitle');
+      const confirmField = document.getElementById('confirmField');
+      const confirmInput = document.getElementById('confirmInput');
+      const submitAuthBtn = document.getElementById('submitAuthBtn');
+      const switchAuthBtn = document.getElementById('switchAuthBtn');
+      const authStatus = document.getElementById('authStatus');
+
+      function getUsers() {
+        const users = localStorage.getItem('nova_users');
+        return users ? JSON.parse(users) : [];
+      }
+
+      function saveUsers(users) {
+        localStorage.setItem('nova_users', JSON.stringify(users));
+      }
+
+      function setAuthMode(mode) {
+        state.authMode = mode;
+        const isSignup = mode === 'signup';
+        authTitle.textContent = isSignup ? 'Create your account' : 'Login to Nova AI';
+        authSubtitle.textContent = isSignup ? 'Create an account to continue' : 'Welcome back';
+        confirmField.style.display = isSignup ? 'flex' : 'none';
+        submitAuthBtn.textContent = isSignup ? 'Sign up' : 'Login';
+        switchAuthBtn.textContent = isSignup ? 'Already have an account? Login' : 'Create account';
+        authStatus.textContent = '';
+        confirmInput.value = '';
+        authForm.classList.add('active');
+        authActions.style.display = 'none';
+      }
+
+      function showAuthOptions() {
+        authActions.style.display = 'grid';
+        authForm.classList.remove('active');
+        authStatus.textContent = '';
+        authTitle.textContent = 'Welcome to Nova AI';
+        authSubtitle.textContent = 'Sign in to continue';
+      }
+
+      function enterApp() {
+        state.isAuthenticated = true;
+        authScreen.style.display = 'none';
+        appShell.style.display = 'flex';
+      }
+
+      function handleAuthSubmit(event) {
+        event.preventDefault();
+        const email = document.getElementById('emailInput').value.trim();
+        const password = document.getElementById('passwordInput').value.trim();
+        const confirmPassword = confirmInput.value.trim();
+        const users = getUsers();
+
+        if (!email || !password) {
+          authStatus.textContent = 'Email and password are required.';
+          return;
+        }
+
+        if (state.authMode === 'signup') {
+          if (!confirmPassword) {
+            authStatus.textContent = 'Please confirm your password.';
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            authStatus.textContent = 'Passwords do not match.';
+            return;
+          }
+
+          const existing = users.find((user) => user.email.toLowerCase() === email.toLowerCase());
+          if (existing) {
+            authStatus.textContent = 'This email is already registered.';
+            return;
+          }
+
+          users.push({ email, password });
+          saveUsers(users);
+          authStatus.textContent = 'Account created successfully.';
+          localStorage.setItem('nova_current_user', email);
+          setTimeout(() => enterApp(), 300);
+          return;
+        }
+
+        const user = users.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
+        if (!user) {
+          authStatus.textContent = 'No account found with this email.';
+          return;
+        }
+
+        if (user.password !== password) {
+          authStatus.textContent = 'Incorrect password.';
+          return;
+        }
+
+        localStorage.setItem('nova_current_user', email);
+        enterApp();
+      }
+
+      function createChat(title = 'New chat') {
+        const id = Date.now() + Math.random().toString(16).slice(2);
+        const chat = { id, title, messages: [] };
+        state.chats.unshift(chat);
+        state.activeChatId = id;
+        return chat;
+      }
+
+      function getActiveChat() {
+        return state.chats.find(chat => chat.id === state.activeChatId) || state.chats[0];
+      }
+
+      function renderHistory() {
+        historyEl.innerHTML = '';
+        state.chats.forEach((chat) => {
+          const item = document.createElement('div');
+          item.className = 'history-item' + (chat.id === state.activeChatId ? ' active' : '');
+          item.textContent = chat.title;
+          item.addEventListener('click', () => {
+            state.activeChatId = chat.id;
+            renderAll();
+          });
+          historyEl.appendChild(item);
+        });
+      }
+
+      const platformModules = [
+        { name: 'Public Website', tag: '01', text: 'Landing pages, feature highlights, pricing, privacy, FAQ and contact flow.' },
+        { name: 'Auth System', tag: '02', text: 'Login, register, reset password, logout, email verification and Google login.' },
+        { name: 'User App', tag: '03', text: 'Dashboard, AI tools, credits, files, settings and subscription controls.' },
+        { name: 'AI Engine', tag: '04', text: 'OpenAI/Groq routing, models, context memory, token tracking and streaming.' },
+        { name: 'Payment System', tag: '05', text: 'Checkout, invoices, billing, purchase flow and payment verification logic.' },
+        { name: 'Admin Panel', tag: '06', text: 'Users, AI models, payments, reports, plans, subscriptions and system settings.' },
+        { name: 'Database', tag: '07', text: 'Users, files, messages, plans, transactions, subscriptions and usage records.' },
+        { name: 'Security', tag: '08', text: 'Authentication, authorization, rate limiting, input validation and abuse protection.' },
+        { name: 'Analytics', tag: '09', text: 'Usage insights, active users, tokens, revenue streams and system monitoring.' }
+      ];
+
+      function renderMessages() {
+        const chat = getActiveChat();
+        messagesEl.innerHTML = '';
+
+        if (!chat || !chat.messages.length) {
+          const welcome = document.createElement('div');
+          welcome.className = 'msg assistant';
+          welcome.innerHTML = `
+            <div class="avatar">AI</div>
+            <div class="bubble">
+              Hello! I’m Nova AI. Ask me anything, and I’ll help with writing, coding, analysis, brainstorming, and more.
+            </div>
+          `;
+          messagesEl.appendChild(welcome);
+
+          const overview = document.createElement('div');
+          overview.className = 'platform-overview';
+          overview.innerHTML = `
+            <h2>Nova AI Platform Structure</h2>
+            <div class="structure-grid">
+              ${platformModules.map((module) => `
+                <div class="module-card">
+                  <span class="module-tag">${module.tag}</span>
+                  <h3>${module.name}</h3>
+                  <p>${module.text}</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          messagesEl.appendChild(overview);
+          return;
+        }
+
+        chat.messages.forEach((msg) => {
+          const row = document.createElement('div');
+          row.className = 'msg ' + msg.role;
+          row.innerHTML = `
+            <div class="avatar">${msg.role === 'user' ? 'U' : 'AI'}</div>
+            <div class="bubble">${msg.content}</div>
+          `;
+          messagesEl.appendChild(row);
+        });
+
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function renderAll() {
+        const chat = getActiveChat();
+        chatTitle.textContent = chat ? chat.title : 'New conversation';
+        renderHistory();
+        renderMessages();
+      }
+
+      function updateTitleFromMessage(text) {
+        const chat = getActiveChat();
+        if (!chat) return;
+        const stripped = text.trim().replace(/\s+/g, ' ');
+        if (stripped.length > 0) {
+          chat.title = stripped.slice(0, 22) + (stripped.length > 22 ? '…' : '');
+        }
+      }
+
+      function appendMessage(role, content) {
+        const chat = getActiveChat();
+        if (!chat) return;
+        chat.messages.push({ role, content });
+        renderAll();
+      }
+
+      function streamAssistantReply(content) {
+        const chat = getActiveChat();
+        if (!chat) return;
+
+        const row = document.createElement('div');
+        row.className = 'msg assistant';
+        row.innerHTML = `
+          <div class="avatar">AI</div>
+          <div class="bubble"></div>
+        `;
+        messagesEl.appendChild(row);
+
+        const bubble = row.querySelector('.bubble');
+        let index = 0;
+        const interval = setInterval(() => {
+          bubble.textContent = content.slice(0, index + 1);
+          index += 1;
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+
+          if (index >= content.length) {
+            clearInterval(interval);
+            chat.messages.push({ role: 'assistant', content });
+            renderAll();
+          }
+        }, 18);
+      }
+
+      async function sendMessage() {
+        const text = promptEl.value.trim();
+        if (!text) return;
+
+        if (!state.activeChatId || !state.chats.length) {
+          createChat();
+        }
+
+        const chat = getActiveChat();
+        if (!chat.messages.length) {
+          updateTitleFromMessage(text);
+        }
+
+        appendMessage('user', text);
+        promptEl.value = '';
+        promptEl.focus();
+
+        sendBtn.disabled = true;
+
+        const loadingRow = document.createElement('div');
+        loadingRow.className = 'loading-row';
+        loadingRow.innerHTML = `
+          <span class="loading-dot"></span>
+          <span class="loading-text">Thinking...</span>
+        `;
+        messagesEl.appendChild(loadingRow);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: chat.messages
+            })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Request failed');
+          }
+
+          const reply = data.reply || 'No response received.';
+          loadingRow.remove();
+          streamAssistantReply(reply);
+        } catch (err) {
+          loadingRow.remove();
+          streamAssistantReply('Sorry, I hit an error. Please try again or check your API key setup.');
+          console.error(err);
+        } finally {
+          sendBtn.disabled = false;
+        }
+      }
+
+      promptEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+
+      sendBtn.addEventListener('click', sendMessage);
+
+      document.getElementById('newChat').addEventListener('click', () => {
+        createChat();
+        renderAll();
+        promptEl.focus();
+      });
+
+      document.getElementById('loginBtn').addEventListener('click', () => {
+        setAuthMode('login');
+      });
+
+      document.getElementById('signupBtn').addEventListener('click', () => {
+        setAuthMode('signup');
+      });
+
+      switchAuthBtn.addEventListener('click', () => {
+        const nextMode = state.authMode === 'login' ? 'signup' : 'login';
+        setAuthMode(nextMode);
+      });
+
+      authForm.addEventListener('submit', handleAuthSubmit);
+
+      createChat('Welcome');
+      renderAll();
+      showAuthOptions();
+    </script>
+  </body>
+</html>
