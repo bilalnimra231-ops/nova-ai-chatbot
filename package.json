@@ -1,15 +1,23 @@
 {
-  "name": "nova-ai-chatbot",
-  "version": "1.0.0",
-  "description": "ChatGPT-style AI chatbot prototype",
-  "main": "server.js",
+  "name": "webidl-conversions",
+  "version": "3.0.1",
+  "description": "Implements the WebIDL algorithms for converting to and from JavaScript values",
+  "main": "lib/index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "test": "mocha test/*.js"
   },
-  "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "openai": "^4.52.0"
+  "repository": "jsdom/webidl-conversions",
+  "keywords": [
+    "webidl",
+    "web",
+    "types"
+  ],
+  "files": [
+    "lib/"
+  ],
+  "author": "Domenic Denicola <d@domenic.me> (https://domenic.me/)",
+  "license": "BSD-2-Clause",
+  "devDependencies": {
+    "mocha": "^1.21.4"
   }
 }
